@@ -14,7 +14,7 @@ from .verdict import SEVERITIES, rule_decorator
 
 RULES = []
 rule = rule_decorator(RULES)
-ISO_DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")  # \d would also take Arabic-Indic digits
+ISO_DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")  # strptime alone would take 2026-8-5
 TEST_WORD = re.compile(r"(?<![^\W\d_])(test|qa)(?![^\W\d_])", re.IGNORECASE)  # never the Qa of Qahtani
 
 

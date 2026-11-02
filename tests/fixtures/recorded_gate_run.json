@@ -1,0 +1,940 @@
+{
+  "verdict": "BLOCK",
+  "exit_code": 1,
+  "fail_on": "critical",
+  "base_url": "https://restful-booker.herokuapp.com",
+  "marker": "gate-403f831f",
+  "cleanup": "deleted 17, left 0",
+  "finished": "2026-11-02 23:47:08",
+  "results": [
+    {
+      "rule_id": "G01",
+      "title": "POST with checkout before checkin is rejected and nothing is stored",
+      "severity": "Critical",
+      "why": "A guest cannot leave before arriving; BK-1043 reached reception showing -3 nights.",
+      "status": "FAIL",
+      "message": "accepted and stored as sent: bookingdates {\"checkin\": \"2026-12-02\", \"checkout\": \"2026-11-27\"}",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G01",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-11-27"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2485,\"booking\":{\"firstname\":\"G01\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-11-27\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=G01&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2485}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2485",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G01\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-11-27\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G02",
+      "title": "POST with checkin equal to checkout is rejected",
+      "severity": "High",
+      "why": "A zero-night stay has no room to assign and nothing to bill, yet shows as Confirmed.",
+      "status": "FAIL",
+      "message": "accepted and stored as sent: bookingdates {\"checkin\": \"2026-12-02\", \"checkout\": \"2026-12-02\"}",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G02",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-02"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2515,\"booking\":{\"firstname\":\"G02\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-02\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=G02&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2515}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2515",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G02\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-02\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G03",
+      "title": "POST with a non-ISO date is rejected, never silently reinterpreted",
+      "severity": "Critical",
+      "why": "The voice agent wrote checkout 12/08/2026 on BK-1043; the API reads it as 8 December.",
+      "status": "FAIL",
+      "message": "accepted and silently rewritten: bookingdates.checkout sent \"12/08/2026\", stored \"2026-12-08\"",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G03",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-08-01",
+              "checkout": "12/08/2026"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2533,\"booking\":{\"firstname\":\"G03\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-08-01\",\"checkout\":\"2026-12-08\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=G03&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2533}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2533",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G03\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-08-01\",\"checkout\":\"2026-12-08\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G04",
+      "title": "POST with an impossible calendar date is rejected, never rolled",
+      "severity": "Critical",
+      "why": "A date that does not exist turns into a different real date nobody agreed to.",
+      "status": "FAIL",
+      "message": "accepted and silently rewritten: bookingdates.checkin sent \"2026-02-30\", stored \"2026-03-02\"",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G04",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-02-30",
+              "checkout": "2026-03-05"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2552,\"booking\":{\"firstname\":\"G04\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-03-02\",\"checkout\":\"2026-03-05\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=G04&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2552}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2552",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G04\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-03-02\",\"checkout\":\"2026-03-05\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G05",
+      "title": "POST with an unparseable date is rejected, never stored as 0NaN-aN-aN",
+      "severity": "Critical",
+      "why": "Reception cannot act on 0NaN-aN-aN, and it matches every checkin search.",
+      "status": "FAIL",
+      "message": "accepted and silently rewritten: bookingdates.checkin sent \"not-a-date\", stored \"0NaN-aN-aN\"",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G05",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "not-a-date",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2573,\"booking\":{\"firstname\":\"G05\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"0NaN-aN-aN\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=G05&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2573}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2573",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G05\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"0NaN-aN-aN\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G06",
+      "title": "PUT with checkout before checkin is rejected",
+      "severity": "Critical",
+      "why": "A fix that guards only new bookings leaves every edit path open.",
+      "status": "FAIL",
+      "message": "accepted with 200 and stored: bookingdates {\"checkin\": \"2026-12-02\", \"checkout\": \"2026-11-27\"}",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G06",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2596,\"booking\":{\"firstname\":\"G06\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2596",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G06\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "PUT",
+          "path": "/booking/2596",
+          "body": {
+            "firstname": "G06",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-11-27"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"firstname\":\"G06\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-11-27\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2596",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G06\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-11-27\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G07",
+      "title": "PATCH with checkout before checkin is rejected",
+      "severity": "Critical",
+      "why": "PATCH is the third way in; a date change must obey the same rule as a new booking.",
+      "status": "FAIL",
+      "message": "accepted with 200 and stored: bookingdates {\"checkin\": \"2026-12-02\", \"checkout\": \"2026-11-27\"}",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G07",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2619,\"booking\":{\"firstname\":\"G07\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2619",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G07\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "PATCH",
+          "path": "/booking/2619",
+          "body": {
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-11-27"
+            }
+          },
+          "status": 200,
+          "response": "{\"firstname\":\"G07\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-11-27\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2619",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G07\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-11-27\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G08",
+      "title": "PATCH with only a new checkout keeps the existing checkin",
+      "severity": "Critical",
+      "why": "Extending a stay at reception must not destroy the arrival date of a good booking.",
+      "status": "FAIL",
+      "message": "checkin wiped by a checkout-only PATCH: was \"2026-12-02\", now \"0NaN-aN-aN\"",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G08",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2646,\"booking\":{\"firstname\":\"G08\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2646",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G08\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "PATCH",
+          "path": "/booking/2646",
+          "body": {
+            "bookingdates": {
+              "checkout": "2026-12-10"
+            }
+          },
+          "status": 200,
+          "response": "{\"firstname\":\"G08\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"0NaN-aN-aN\",\"checkout\":\"2026-12-10\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2646",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G08\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"0NaN-aN-aN\",\"checkout\":\"2026-12-10\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G09",
+      "title": "A valid booking with an Arabic name is stored exactly as sent",
+      "severity": "Critical",
+      "why": "Sanity check and the Riyadh and Jeddah happy path: if this fails the environment is broken.",
+      "status": "PASS",
+      "message": "stored exactly as sent, Arabic text intact",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "فهد العتيبي",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "سرير إضافي"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2464,\"booking\":{\"firstname\":\"فهد العتيبي\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"سرير إضافي\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=%D9%81%D9%87%D8%AF+%D8%A7%D9%84%D8%B9%D8%AA%D9%8A%D8%A8%D9%8A&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2464}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2464",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"فهد العتيبي\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"سرير إضافي\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G10",
+      "title": "totalprice as a non-numeric string is rejected, never stored as null",
+      "severity": "High",
+      "why": "BK-1043 carried SAR 250; stored as null, nobody knows what to charge.",
+      "status": "FAIL",
+      "message": "accepted and silently rewritten: totalprice sent \"SAR 250\", stored null",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G10",
+            "lastname": "gate-403f831f",
+            "totalprice": "SAR 250",
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2679,\"booking\":{\"firstname\":\"G10\",\"lastname\":\"gate-403f831f\",\"totalprice\":null,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=G10&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2679}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2679",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G10\",\"lastname\":\"gate-403f831f\",\"totalprice\":null,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G11",
+      "title": "Negative totalprice is rejected",
+      "severity": "High",
+      "why": "A negative total means paying the guest to stay.",
+      "status": "FAIL",
+      "message": "accepted and stored as sent: totalprice -100",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G11",
+            "lastname": "gate-403f831f",
+            "totalprice": -100,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2700,\"booking\":{\"firstname\":\"G11\",\"lastname\":\"gate-403f831f\",\"totalprice\":-100,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=G11&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2700}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2700",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G11\",\"lastname\":\"gate-403f831f\",\"totalprice\":-100,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G12",
+      "title": "Decimal totalprice is preserved, not truncated",
+      "severity": "Medium",
+      "why": "Truncating 199.99 to 199 under-bills every booking priced in halalas.",
+      "status": "FAIL",
+      "message": "truncated: totalprice sent 199.99, stored 199",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G12",
+            "lastname": "gate-403f831f",
+            "totalprice": 199.99,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2712,\"booking\":{\"firstname\":\"G12\",\"lastname\":\"gate-403f831f\",\"totalprice\":199,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=G12&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2712}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2712",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G12\",\"lastname\":\"gate-403f831f\",\"totalprice\":199,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G13",
+      "title": "A missing required field returns 400, not 500",
+      "severity": "High",
+      "why": "A 500 tells the voice agent nothing it can fix and looks like an outage.",
+      "status": "FAIL",
+      "message": "missing firstname: answered 500; missing totalprice: answered 500; missing depositpaid: answered 500; missing bookingdates: answered 500; missing lastname: answered 500; missing checkin: answered 500; firstname as a number: answered 500; expected 400",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 500,
+          "response": "Internal Server Error"
+        },
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G13",
+            "lastname": "gate-403f831f",
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 500,
+          "response": "Internal Server Error"
+        },
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G13",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 500,
+          "response": "Internal Server Error"
+        },
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G13",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "additionalneeds": "Breakfast"
+          },
+          "status": 500,
+          "response": "Internal Server Error"
+        },
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 500,
+          "response": "Internal Server Error"
+        },
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G13",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 500,
+          "response": "Internal Server Error"
+        },
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": 12345,
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 500,
+          "response": "Internal Server Error"
+        }
+      ]
+    },
+    {
+      "rule_id": "G14",
+      "title": "Empty firstname or lastname is rejected",
+      "severity": "High",
+      "why": "Reception cannot greet or find a guest with no name.",
+      "status": "FAIL",
+      "message": "accepted and stored as sent: firstname \"\"; accepted and stored as sent: lastname \"\"",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2793,\"booking\":{\"firstname\":\"\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2793}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2793",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "gate-403f831f",
+            "lastname": "",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2811,\"booking\":{\"firstname\":\"gate-403f831f\",\"lastname\":\"\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=gate-403f831f&lastname=",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2811}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2811",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"gate-403f831f\",\"lastname\":\"\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G15",
+      "title": "depositpaid as a string is rejected, not coerced",
+      "severity": "Medium",
+      "why": "Coercing 'yes' to true records a deposit nobody checked.",
+      "status": "FAIL",
+      "message": "accepted and silently rewritten: depositpaid sent \"yes\", stored true",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G15",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": "yes",
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2836,\"booking\":{\"firstname\":\"G15\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?firstname=G15&lastname=gate-403f831f",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2836}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2836",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G15\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G16",
+      "title": "POST /auth with a wrong password returns 401, not 200",
+      "severity": "Medium",
+      "why": "A failed login answered with 200 looks like success to any client checking the status.",
+      "status": "FAIL",
+      "message": "wrong password: answered 200; expected 401",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/auth",
+          "body": {
+            "username": "admin",
+            "password": "wrong-70dea8a9"
+          },
+          "status": 200,
+          "response": "{\"reason\":\"Bad credentials\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G17",
+      "title": "GET /booking?checkin=D returns a booking whose checkin is exactly D",
+      "severity": "Medium",
+      "why": "Reception searching arrivals from a date would miss everyone arriving on that date.",
+      "status": "FAIL",
+      "message": "checkin exactly 2027-03-02 not returned, the day after is: filter acts as >, docs say >=",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G17-exact",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2027-03-02",
+              "checkout": "2027-03-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2869,\"booking\":{\"firstname\":\"G17-exact\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2027-03-02\",\"checkout\":\"2027-03-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2869",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G17-exact\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2027-03-02\",\"checkout\":\"2027-03-07\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G17-later",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2027-03-03",
+              "checkout": "2027-03-08"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2884,\"booking\":{\"firstname\":\"G17-later\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2027-03-03\",\"checkout\":\"2027-03-08\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2884",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G17-later\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2027-03-03\",\"checkout\":\"2027-03-08\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking?checkin=2027-03-02",
+          "body": null,
+          "status": 200,
+          "response": "[{\"bookingid\":2573},{\"bookingid\":2884}]"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2869",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G17-exact\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2027-03-02\",\"checkout\":\"2027-03-07\"},\"additionalneeds\":\"Breakfast\"}"
+        }
+      ]
+    },
+    {
+      "rule_id": "G18",
+      "title": "A filter with a non-ISO date returns 400, not 500",
+      "severity": "Low",
+      "why": "A client sending a local-format date gets a server error instead of a usable message.",
+      "status": "FAIL",
+      "message": "checkin=15/08/2026: answered 500; expected 400",
+      "exchanges": [
+        {
+          "method": "GET",
+          "path": "/booking?checkin=15/08/2026",
+          "body": null,
+          "status": 500,
+          "response": "Internal Server Error"
+        }
+      ]
+    },
+    {
+      "rule_id": "G19",
+      "title": "DELETE of a missing id returns 404, not 405",
+      "severity": "Low",
+      "why": "A 405 hides the fact that the booking is already gone.",
+      "status": "FAIL",
+      "message": "DELETE of a missing id: answered 405; expected 404",
+      "exchanges": [
+        {
+          "method": "POST",
+          "path": "/booking",
+          "body": {
+            "firstname": "G19",
+            "lastname": "gate-403f831f",
+            "totalprice": 250,
+            "depositpaid": true,
+            "bookingdates": {
+              "checkin": "2026-12-02",
+              "checkout": "2026-12-07"
+            },
+            "additionalneeds": "Breakfast"
+          },
+          "status": 200,
+          "response": "{\"bookingid\":2909,\"booking\":{\"firstname\":\"G19\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}}"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2909",
+          "body": null,
+          "status": 200,
+          "response": "{\"firstname\":\"G19\",\"lastname\":\"gate-403f831f\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-02\",\"checkout\":\"2026-12-07\"},\"additionalneeds\":\"Breakfast\"}"
+        },
+        {
+          "method": "DELETE",
+          "path": "/booking/2909",
+          "body": null,
+          "status": 201,
+          "response": "Created"
+        },
+        {
+          "method": "GET",
+          "path": "/booking/2909",
+          "body": null,
+          "status": 404,
+          "response": "Not Found"
+        },
+        {
+          "method": "DELETE",
+          "path": "/booking/2909",
+          "body": null,
+          "status": 405,
+          "response": "Method Not Allowed"
+        }
+      ]
+    }
+  ]
+}
