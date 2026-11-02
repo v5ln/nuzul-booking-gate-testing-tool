@@ -6,7 +6,7 @@ replay recorded responses through the same logic the live run uses.
 """
 import json
 import secrets
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from .client import Unreachable, booking_path, ids_in
@@ -14,7 +14,6 @@ from .verdict import PASS, SANITY_RULE, Inconclusive, failed, inconclusive, pass
 
 RULES = []
 rule = rule_decorator(RULES)
-BAD_ORDER = {"nights": -5}
 
 
 @dataclass
@@ -25,7 +24,7 @@ class Result:
     why: str
     status: str
     message: str
-    exchanges: list = field(default_factory=list)
+    exchanges: list
 
 
 class Run:
@@ -88,6 +87,11 @@ class Run:
         booking_id = reply_id or (matches[0] if matches else None)
         return sent, reply.status, self.read(booking_id) if booking_id else None
 
+    def must_refuse(self, tag, path, **overrides):
+        """POST a bad booking and judge the rejection; `path` is the field to compare."""
+        sent, status, stored = self.post_and_find(tag, **overrides)
+        return evaluate_rejection(sent, status, stored, path)
+
     def update(self, tag, method, body):
         """Send a bad update to a fresh booking; returns (before, status, after).
 
@@ -99,10 +103,12 @@ class Run:
         return before, status, self.read(booking_id)
 
 
-def dig(record, path):
-    """Read a dotted path such as bookingdates.checkout; None when absent."""
+def dig(record, path, default=None):
+    """Read a dotted path such as bookingdates.checkout; `default` when the key is absent."""
     for key in path.split("."):
-        record = record.get(key) if isinstance(record, dict) else None
+        if not isinstance(record, dict) or key not in record:
+            return default
+        record = record[key]
     return record
 
 
@@ -192,16 +198,14 @@ def evaluate_checkin_filter(day, exact_found, later_found):
       "A guest cannot leave before arriving; BK-1043 reached reception showing -3 nights.")
 def g01(run):
     """Both dates are valid on their own, so only an ordering check can refuse this."""
-    sent, status, stored = run.post_and_find("G01", bookingdates=run.dates(**BAD_ORDER))
-    return evaluate_rejection(sent, status, stored, "bookingdates")
+    return run.must_refuse("G01", "bookingdates", bookingdates=run.dates(nights=-5))
 
 
 @rule("G02", "POST with checkin equal to checkout is rejected", "High",
       "A zero-night stay has no room to assign and nothing to bill, yet shows as Confirmed.")
 def g02(run):
     """Same-day is a policy opinion; Nuzul may decide day-use is allowed."""
-    sent, status, stored = run.post_and_find("G02", bookingdates=run.dates(nights=0))
-    return evaluate_rejection(sent, status, stored, "bookingdates")
+    return run.must_refuse("G02", "bookingdates", bookingdates=run.dates(nights=0))
 
 
 @rule("G03", "POST with a non-ISO date is rejected, never silently reinterpreted", "Critical",
@@ -209,8 +213,7 @@ def g02(run):
 def g03(run):
     """Checkin precedes both readings of 12/08/2026, so only a format check can refuse this."""
     dates = {"checkin": "2026-08-01", "checkout": "12/08/2026"}
-    sent, status, stored = run.post_and_find("G03", bookingdates=dates)
-    return evaluate_rejection(sent, status, stored, "bookingdates.checkout")
+    return run.must_refuse("G03", "bookingdates.checkout", bookingdates=dates)
 
 
 @rule("G04", "POST with an impossible calendar date is rejected, never rolled", "Critical",
@@ -218,8 +221,7 @@ def g03(run):
 def g04(run):
     """The API rolls 30 February forward; the checkout stays after both readings of it."""
     dates = {"checkin": "2026-02-30", "checkout": "2026-03-05"}
-    sent, status, stored = run.post_and_find("G04", bookingdates=dates)
-    return evaluate_rejection(sent, status, stored, "bookingdates.checkin")
+    return run.must_refuse("G04", "bookingdates.checkin", bookingdates=dates)
 
 
 @rule("G05", "POST with an unparseable date is rejected, never stored as 0NaN-aN-aN", "Critical",
@@ -227,15 +229,14 @@ def g04(run):
 def g05(run):
     """Garbage in a date field must never reach storage in any form."""
     dates = {"checkin": "not-a-date", "checkout": run.dates()["checkout"]}
-    sent, status, stored = run.post_and_find("G05", bookingdates=dates)
-    return evaluate_rejection(sent, status, stored, "bookingdates.checkin")
+    return run.must_refuse("G05", "bookingdates.checkin", bookingdates=dates)
 
 
 @rule("G06", "PUT with checkout before checkin is rejected", "Critical",
       "A fix that guards only new bookings leaves every edit path open.")
 def g06(run):
     """The ordering rule must hold on a full update of a good booking."""
-    body = run.booking("G06", bookingdates=run.dates(**BAD_ORDER))
+    body = run.booking("G06", bookingdates=run.dates(nights=-5))
     return evaluate_update_refused(*run.update("G06", "PUT", body))
 
 
@@ -243,7 +244,7 @@ def g06(run):
       "PATCH is the third way in; a date change must obey the same rule as a new booking.")
 def g07(run):
     """The ordering rule must hold on a partial update of a good booking."""
-    body = {"bookingdates": run.dates(**BAD_ORDER)}
+    body = {"bookingdates": run.dates(nights=-5)}
     return evaluate_update_refused(*run.update("G07", "PATCH", body))
 
 
@@ -268,16 +269,14 @@ def g09(run):
       "BK-1043 carried SAR 250; stored as null, nobody knows what to charge.")
 def g10(run):
     """A price the API cannot read must be refused, not blanked."""
-    sent, status, stored = run.post_and_find("G10", totalprice="SAR 250")
-    return evaluate_rejection(sent, status, stored, "totalprice")
+    return run.must_refuse("G10", "totalprice", totalprice="SAR 250")
 
 
 @rule("G11", "Negative totalprice is rejected", "High",
       "A negative total means paying the guest to stay.")
 def g11(run):
     """Zero is left to audit rule A05: free stays may be a legitimate policy."""
-    sent, status, stored = run.post_and_find("G11", totalprice=-100)
-    return evaluate_rejection(sent, status, stored, "totalprice")
+    return run.must_refuse("G11", "totalprice", totalprice=-100)
 
 
 @rule("G12", "Decimal totalprice is preserved, not truncated", "Medium",
@@ -303,8 +302,7 @@ def g13(run):
       "Reception cannot greet or find a guest with no name.")
 def g14(run):
     """The blank-lastname case carries the marker in firstname, so cleanup still finds it."""
-    outcomes = [evaluate_rejection(sent, status, stored, path) for path, (sent, status, stored) in {
-        "firstname": run.post_and_find(""), "lastname": run.post_and_find(run.marker, lastname="")}.items()]
+    outcomes = [run.must_refuse("", "firstname"), run.must_refuse(run.marker, "lastname", lastname="")]
     message = "; ".join(outcome.message for outcome in outcomes)
     return passed(message) if all(outcome.status == PASS for outcome in outcomes) else failed(message)
 
@@ -313,8 +311,7 @@ def g14(run):
       "Coercing 'yes' to true records a deposit nobody checked.")
 def g15(run):
     """The docs type depositpaid as Boolean."""
-    sent, status, stored = run.post_and_find("G15", depositpaid="yes")
-    return evaluate_rejection(sent, status, stored, "depositpaid")
+    return run.must_refuse("G15", "depositpaid", depositpaid="yes")
 
 
 @rule("G16", "POST /auth with a wrong password returns 401, not 200", "Medium",

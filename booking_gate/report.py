@@ -8,6 +8,7 @@ from pathlib import Path
 
 REPORTS = Path(__file__).resolve().parent.parent / "reports"
 BODY_LIMIT = 600  # characters of a response body shown in markdown; the JSON keeps it all
+FLAG_HEADERS = ("Booking", "Rule", "Severity", "Field", "Value", "Nights")
 
 
 def clean(value, limit=70):
@@ -70,6 +71,29 @@ def gate_markdown(info, results):
     return "\n".join(lines)
 
 
+def flag_rows(flags):
+    return [(flag.booking_id, flag.rule_id, flag.severity, flag.field, clean(flag.value),
+             "?" if flag.nights is None else flag.nights) for flag in flags]
+
+
+def audit_summary(audit):
+    """The lines shared by the terminal output and the markdown report."""
+    severities = ", ".join(f"{name} {count}" for name, count in audit["by_severity"].items()) or "none"
+    rules = ", ".join(f"{name} {count}" for name, count in audit["by_rule"].items()) or "none"
+    return [f"Scanned {audit['scanned']} of {audit['requested']} bookings",
+            f"Flagged {audit['flagged']} bookings with {len(audit['flags'])} flags",
+            f"By severity: {severities}", f"By rule: {rules}",
+            f"Not found (reset or deleted during the scan): {audit['not_found']}",
+            f"Failed after retries: {audit['failed']}"]
+
+
+def audit_markdown(info, audit):
+    lines = ["# Booking data audit", "", f"- API: {info['base_url']}", f"- Finished: {info['finished']} UTC"]
+    lines += [f"- {line}" for line in audit_summary(audit)]
+    lines += ["", md_table(FLAG_HEADERS, flag_rows(audit["flags"])), ""]
+    return "\n".join(lines)
+
+
 def save(kind, markdown, data):
     """Write reports/<kind>-<UTC timestamp>.md and .json; return both paths."""
     REPORTS.mkdir(exist_ok=True)
@@ -83,3 +107,11 @@ def save(kind, markdown, data):
 def save_gate(info, results):
     data = {**info, "results": [asdict(result) for result in results]}
     return save("gate", gate_markdown(info, results), data)
+
+
+def audit_data(info, audit):
+    return {**info, **audit, "flags": [asdict(flag) for flag in audit["flags"]]}
+
+
+def save_audit(info, audit):
+    return save("audit", audit_markdown(info, audit), audit_data(info, audit))
