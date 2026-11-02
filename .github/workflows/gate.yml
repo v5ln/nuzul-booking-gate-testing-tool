@@ -1,0 +1,43 @@
+name: release gate
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *"
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m unittest
+
+  gate-and-audit:
+    # Live checks run on the nightly schedule and on demand, never on a push:
+    # the sandbox is shared, and a push should not depend on it being awake.
+    if: github.event_name != 'push'
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Audit what already got in
+        run: python gate.py audit
+        continue-on-error: true
+      - name: Release gate
+        run: python gate.py gate
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: reports/
