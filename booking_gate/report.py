@@ -12,8 +12,9 @@ FLAG_HEADERS = ("Booking", "Rule", "Severity", "Field", "Value", "Nights")
 
 
 def clean(value, limit=70):
-    """Make a value safe to print: other testers' data is not ours to trust."""
-    text = re.sub(r"[\x00-\x1f\x7f]", " ", value if isinstance(value, str) else json.dumps(value, ensure_ascii=False))
+    """Make a value safe and visible: other testers' data is untrusted, and a blank name must show."""
+    text = value if isinstance(value, str) and value.strip() else json.dumps(value, ensure_ascii=False)
+    text = re.sub(r"[\x00-\x1f\x7f]", " ", text)
     return text if len(text) <= limit else text[:limit - 1] + "…"
 
 

@@ -71,3 +71,4 @@ class Scan(unittest.TestCase):
         self.assertNotIn("\n", cell)
         self.assertNotIn("\x1b", cell)
         self.assertIn("\\|", report.md_row([cell]))
+        self.assertEqual([report.clean(blank) for blank in ("", "  ", None)], ['""', '"  "', "null"])
