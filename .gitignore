@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.DS_Store
+
+# Reports are written on every run; only the committed samples stay in git.
+reports/*
+!reports/sample-gate.md
+!reports/sample-audit.md
+!reports/sample-demo.txt
