@@ -140,8 +140,8 @@ def show_seeded_booking(client, booking_id, sent):
     indented(report.table(report.FLAG_HEADERS, report.flag_rows(run_audit(client, [booking_id])["flags"])))
     print("\n   The same rules on the raw payload, before the API rewrote it:")
     indented(report.table(report.FLAG_HEADERS, report.flag_rows(scan("payload", sent))))
-    print("\n   The audit sees only what survived. The rewritten checkout is a real date now, so no audit")
-    print("   can catch it. Only the gate can: G03 compares what was sent with what was stored.\n")
+    print("\n   The audit sees only what survived. The rewritten checkout is a real date now, so it passes")
+    print("   the audit's date rules. Only the gate catches it: G03 compares what was sent with what was stored.\n")
 
 
 def cmd_demo(args):
@@ -169,24 +169,26 @@ def id_list(text):
 
 
 def main():
+    shared = argparse.ArgumentParser(add_help=False)
+    shared.add_argument("--base-url", default=os.environ.get("BOOKER_URL", api.DEFAULT_URL))
+    shared.add_argument("--username", default=os.environ.get("BOOKER_USER", api.DEFAULT_USER))
+    shared.add_argument("--password", default=os.environ.get("BOOKER_PASS", api.DEFAULT_PASS))
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-url", default=os.environ.get("BOOKER_URL", api.DEFAULT_URL))
-    parser.add_argument("--username", default=os.environ.get("BOOKER_USER", api.DEFAULT_USER))
-    parser.add_argument("--password", default=os.environ.get("BOOKER_PASS", api.DEFAULT_PASS))
     commands = parser.add_subparsers(dest="command", required=True)
 
     commands.add_parser("rules", help="print the rule catalogue").set_defaults(run=cmd_rules)
-    gate = commands.add_parser("gate", help="prove whether a release enforces the booking rules")
+    gate = commands.add_parser("gate", parents=[shared], help="prove whether a release enforces the booking rules")
     gate.add_argument("--fail-on", choices=("critical", "high", "any"), default="critical",
                       help="lowest severity that makes the exit code 1")
     gate.set_defaults(run=cmd_gate)
-    audit = commands.add_parser("audit", help="scan the bookings that already got in")
+    audit = commands.add_parser("audit", parents=[shared], help="scan the bookings that already got in")
     audit.add_argument("--limit", type=int, help="scan only the first N ids, newest first")
     audit.add_argument("--ids", type=id_list, help="comma-separated booking ids to scan")
     audit.add_argument("--concurrency", type=int, default=8)
     audit.add_argument("--json", action="store_true", help="print JSON instead of tables")
     audit.set_defaults(run=cmd_audit)
-    commands.add_parser("demo", help="the BK-1043 booking, end to end").set_defaults(run=cmd_demo)
+    demo = commands.add_parser("demo", parents=[shared], help="the BK-1043 booking, end to end")
+    demo.set_defaults(run=cmd_demo)
 
     args = parser.parse_args()
     return args.run(args)

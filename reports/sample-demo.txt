@@ -1,11 +1,11 @@
 Waking https://restful-booker.herokuapp.com (up to 60s)...
-Nuzul demo, run gate-2e2eef4e: one bad voice-agent call, end to end
+Nuzul demo, run gate-127b1c78: one bad voice-agent call, end to end
 
 1. The voice agent posts a booking shaped like BK-1043
-   POST /booking {"firstname": "فهد العتيبي", "lastname": "gate-2e2eef4e", "totalprice": "SAR 250", "depositpaid": true, "bookingdates": {"checkin": "2026-08-15", "checkout": "12/08/2026"}}
+   POST /booking {"firstname": "فهد العتيبي", "lastname": "gate-127b1c78", "totalprice": "SAR 250", "depositpaid": true, "bookingdates": {"checkin": "2026-08-15", "checkout": "12/08/2026"}}
    -> 200
 
-2. What the API stored as booking 3065
+2. What the API stored as booking 4707
    Field                  Sent          Stored
    -----                  ----          ------
    bookingdates.checkin   "2026-08-15"  "2026-08-15"
@@ -16,10 +16,10 @@ Nuzul demo, run gate-2e2eef4e: one bad voice-agent call, end to end
    Nights from the sent dates, read day-first as the console did: -3
    Nights from the stored dates, read month-first as the API did: 115
 
-3. Audit of booking 3065
+3. Audit of booking 4707
    Booking  Rule  Severity  Field       Value  Nights
    -------  ----  --------  -----       -----  ------
-   3065     A04   High      totalprice  null   115
+   4707     A04   High      totalprice  null   115
 
    The same rules on the raw payload, before the API rewrote it:
    Booking  Rule  Severity  Field                  Value                     Nights
@@ -28,7 +28,7 @@ Nuzul demo, run gate-2e2eef4e: one bad voice-agent call, end to end
    payload  A03   Critical  bookingdates.checkout  12/08/2026                -3
    payload  A04   High      totalprice             SAR 250                   -3
 
-   The audit sees only what survived. The rewritten checkout is a real date now, so no audit
-   can catch it. Only the gate can: G03 compares what was sent with what was stored.
+   The audit sees only what survived. The rewritten checkout is a real date now, so it passes
+   the audit's date rules. Only the gate catches it: G03 compares what was sent with what was stored.
 
 4. Cleanup: deleted 1, left 0
